@@ -3,6 +3,7 @@
 
 
 import random
+import queue
 
 def generate_random():
     numbers_to_pick = [0,1,2,3,4,5,6,7,8]
@@ -29,6 +30,15 @@ def check_if_solvable(puzzle):
                 inversions += 1
     return inversions%2 == 1
 
+def get_heuristic(puzzle):
+    goal = [[1,2,3],[8,0,4],[7,6,5]]
+    incorrect_squares = 0
+    for row in range(3):
+        for col in range(3):
+            if puzzle[row][col] != goal[row][col]:
+                incorrect_squares += 1
+    return incorrect_squares
+
 def convert_puzzle_to_list(puzzle):
     ret_list = []
     for row in range(3):
@@ -36,11 +46,136 @@ def convert_puzzle_to_list(puzzle):
             ret_list.append(puzzle[row][col])
     return ret_list
 
-puzzle = generate_random()
-correct = [[1,2,3],[8,0,4],[7,6,5]]
+def get_all_successors(puzzle):
+    if puzzle[0][0] == 0:
+        new_puzzle_1 = deep_copy(puzzle)
+        new_puzzle_1[0][0] = new_puzzle_1[0][1]
+        new_puzzle_1[0][1] = 0
+        new_puzzle_2 = deep_copy(puzzle)
+        new_puzzle_2[0][0] = new_puzzle_2[1][0]
+        new_puzzle_2[1][0] = 0
+        return [new_puzzle_1, new_puzzle_2]
+    elif puzzle[0][1] == 0:
+        new_puzzle_1 = deep_copy(puzzle)
+        new_puzzle_1[0][1] = new_puzzle_1[0][0]
+        new_puzzle_1[0][0] = 0
+        new_puzzle_2 = deep_copy(puzzle)
+        new_puzzle_2[0][1] = new_puzzle_2[0][2]
+        new_puzzle_2[0][2] = 0
+        new_puzzle_3 = deep_copy(puzzle)
+        new_puzzle_3[0][1] = new_puzzle_3[1][1]
+        new_puzzle_3[1][1] = 0
+        return [new_puzzle_1, new_puzzle_2, new_puzzle_3]
+    elif puzzle[0][2] == 0:
+        new_puzzle_1 = deep_copy(puzzle)
+        new_puzzle_1[0][2] = new_puzzle_1[0][1]
+        new_puzzle_1[0][1] = 0
+        new_puzzle_2 = deep_copy(puzzle)
+        new_puzzle_2[0][2] = new_puzzle_2[1][2]
+        new_puzzle_2[1][2] = 0
+        return [new_puzzle_1, new_puzzle_2]
+    elif puzzle[1][0] == 0:
+        new_puzzle_1 = deep_copy(puzzle)
+        new_puzzle_1[1][0] = new_puzzle_1[0][0]
+        new_puzzle_1[0][0] = 0
+        new_puzzle_2 = deep_copy(puzzle)
+        new_puzzle_2[1][0] = new_puzzle_2[2][0]
+        new_puzzle_2[2][0] = 0
+        new_puzzle_3 = deep_copy(puzzle)
+        new_puzzle_3[1][0] = new_puzzle_3[1][1]
+        new_puzzle_3[1][1] = 0
+        return [new_puzzle_1, new_puzzle_2, new_puzzle_3]
+    elif puzzle[1][1] == 0:
+        new_puzzle_1 = deep_copy(puzzle)
+        new_puzzle_1[1][1] = new_puzzle_1[0][1]
+        new_puzzle_1[0][1] = 0
+        new_puzzle_2 = deep_copy(puzzle)
+        new_puzzle_2[1][1] = new_puzzle_2[1][0]
+        new_puzzle_2[1][0] = 0
+        new_puzzle_3 = deep_copy(puzzle)
+        new_puzzle_3[1][1] = new_puzzle_3[1][2]
+        new_puzzle_3[1][2] = 0
+        new_puzzle_4 = deep_copy(puzzle)
+        new_puzzle_4[1][1] = new_puzzle_4[2][1]
+        new_puzzle_4[2][1] = 0
+        return [new_puzzle_1, new_puzzle_2, new_puzzle_3, new_puzzle_4]
+    elif puzzle[1][2] == 0:
+        new_puzzle_1 = deep_copy(puzzle)
+        new_puzzle_1[1][2] = new_puzzle_1[2][2]
+        new_puzzle_1[2][2] = 0
+        new_puzzle_2 = deep_copy(puzzle)
+        new_puzzle_2[1][2] = new_puzzle_2[0][2]
+        new_puzzle_2[0][2] = 0
+        new_puzzle_3 = deep_copy(puzzle)
+        new_puzzle_3[1][2] = new_puzzle_3[1][1]
+        new_puzzle_3[1][1] = 0
+        return [new_puzzle_1, new_puzzle_2, new_puzzle_3]
+    elif puzzle[2][0] == 0:
+        new_puzzle_1 = deep_copy(puzzle)
+        new_puzzle_1[2][0] = new_puzzle_1[1][0]
+        new_puzzle_1[1][0] = 0
+        new_puzzle_2 = deep_copy(puzzle)
+        new_puzzle_2[2][0] = new_puzzle_2[2][1]
+        new_puzzle_2[2][1] = 0
+        return [new_puzzle_1, new_puzzle_2]
+    elif puzzle[2][1] == 0:
+        new_puzzle_1 = deep_copy(puzzle)
+        new_puzzle_1[2][1] = new_puzzle_1[2][2]
+        new_puzzle_1[2][2] = 0
+        new_puzzle_2 = deep_copy(puzzle)
+        new_puzzle_2[2][1] = new_puzzle_2[2][0]
+        new_puzzle_2[2][0] = 0
+        new_puzzle_3 = deep_copy(puzzle)
+        new_puzzle_3[2][1] = new_puzzle_3[1][1]
+        new_puzzle_3[1][1] = 0
+        return [new_puzzle_1, new_puzzle_2, new_puzzle_3]
+    elif puzzle[2][2] == 0:
+        new_puzzle_1 = deep_copy(puzzle)
+        new_puzzle_1[2][2] = new_puzzle_1[2][1]
+        new_puzzle_1[2][1] = 0
+        new_puzzle_2 = deep_copy(puzzle)
+        new_puzzle_2[2][2] = new_puzzle_2[1][2]
+        new_puzzle_2[1][2] = 0
+        return [new_puzzle_1, new_puzzle_2]
+
+def deep_copy(puzzle):
+    new_copy = [[],[],[]]
+    for row in range(3):
+        for col in range(3):
+            new_copy[row].append(puzzle[row][col])
+    return new_copy
+
+def solve(a,b,c,d,e,f,g,h,i):
+    puzzle = [[a,b,c],[d,e,f],[g,h,i]]
+    if not check_if_solvable(puzzle):
+        return False
+    pq = queue.PriorityQueue()
+    priority = get_heuristic(puzzle)
+    pq.put((priority, puzzle))
+    return our_solve(pq)
+
+def our_solve(pq):
+    if pq.empty():
+        return False
+    puzzle_tuple = pq.get()
+    priority = puzzle_tuple[0]
+    puzzle = puzzle_tuple[1]
+    if check_goal_state(puzzle):
+        return True
+    successors = get_all_successors(puzzle)
+    for successor in successors:
+        puzzle_heuristic = get_heuristic(puzzle)
+        depth = priority-puzzle_heuristic
+        heuristic = get_heuristic(successor) + depth + 1
+        pq.put((heuristic, successor))
+    if our_solve(pq):
+        return True
+    else:
+        return False
+
 # print(puzzle)
 # print(check_if_solvable(puzzle))
-print(correct)
-print(check_if_solvable(correct))
+
+print(solve(8,1,2,0,4,3,7,6,5))
 
 
