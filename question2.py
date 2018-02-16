@@ -44,6 +44,14 @@ def and_rule(start_node):
     new_node2.statement = second_part
     propagate_in_order(start_node, new_node1, new_node2)
 
+
+def deep_copy(node):
+    new_node = Node()
+    new_node.statement = node.statement
+    new_node.left = node.left
+    new_node.right = node.right
+    new_node.parent = node.parent
+
 def propagate_in_order(start_node, node1, node2):
     if start_node is None:
         return
@@ -85,5 +93,16 @@ def check_if_contradictory(statement1, statement2):
         ret_val = ret_val and statement2[0] == statement1[1]
         ret_val = ret_val and statement2[0][0].isupper() and statement2[0][1].islower()
         return ret_val
+
+def check_if_contradictory_above(node):
+    above_node = node.parent
+    while above_node is not None:
+        contradiction = check_if_contradictory(node.statement, above_node.statement)
+        if contradiction:
+            return True
+        else:
+            above_node = above_node.parent
+    return False
+
 
 print(check_if_contradictory(["NOT", "Pd"], ["Pd"]))
