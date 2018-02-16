@@ -153,9 +153,12 @@ def solve(a,b,c,d,e,f,g,h,i):
     priority = get_heuristic(puzzle)
     pq.put((priority, [puzzle]))
     solution = our_solve(pq)
-    print_string = print_solution(solution[1])
-    print(print_string)
-    print("This took " + str(len(solution[1])-1) + " steps")
+    if solution[0]:
+        print_string = convert_chain_to_string(solution[1])
+        print(print_string)
+        print("This solution took " + str(len(solution[1])-1) + " steps")
+    else:
+        return False
 
 def deep_copy_puzzle_chain(chain):
     new_chain = []
@@ -183,14 +186,15 @@ def our_solve(pq):
         pq.put((heuristic, chain_copy))
     return our_solve(pq)
 
-# print(puzzle)
-# print(check_if_solvable(puzzle))
-def print_solution(chain):
+
+def convert_chain_to_string(chain):
     ret_string = ""
     for step in chain:
-        ret_string = ret_string + print_puzzle(step) + "\n"
+        ret_string = ret_string + convert_puzzle_to_string(step) + "\n"
     return ret_string
-def print_puzzle(puzzle):
+
+
+def convert_puzzle_to_string(puzzle):
     ret_string = ""
     ret_string = ret_string + str(puzzle[0]) + "\n" + str(puzzle[1]) + "\n" + str(puzzle[2]) + "\n"
     return ret_string
