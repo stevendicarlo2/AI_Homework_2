@@ -148,17 +148,19 @@ def deep_copy(puzzle):
 def solve(a,b,c,d,e,f,g,h,i):
     puzzle = [[a,b,c],[d,e,f],[g,h,i]]
     if not check_if_solvable(puzzle):
-        return False
+        print("unsolvable")
+        return
     pq = queue.PriorityQueue()
     priority = get_heuristic(puzzle)
     pq.put((priority, [puzzle]))
-    solution = our_solve(pq)
+    seen_states = [puzzle]
+    solution = our_solve(pq, seen_states)
     if solution[0]:
         print_string = convert_chain_to_string(solution[1])
         print(print_string)
         print("This solution took " + str(len(solution[1])-1) + " steps")
     else:
-        return False
+        print("unsolvable")
 
 def deep_copy_puzzle_chain(chain):
     new_chain = []
@@ -167,24 +169,25 @@ def deep_copy_puzzle_chain(chain):
         new_chain.append(puzzle_copy)
     return new_chain
 
-def our_solve(pq):
-    if pq.empty():
-        return (False, [])
-    puzzle_tuple = pq.get()
-    priority = puzzle_tuple[0]
-    puzzle_chain = puzzle_tuple[1]
-    puzzle = puzzle_chain[-1]
-    if check_goal_state(puzzle):
-        return (True, puzzle_chain)
-    successors = get_all_successors(puzzle)
-    for successor in successors:
-        puzzle_heuristic = get_heuristic(puzzle)
-        depth = priority-puzzle_heuristic
-        heuristic = get_heuristic(successor) + depth + 1
-        chain_copy = deep_copy_puzzle_chain(puzzle_chain)
-        chain_copy.append(successor)
-        pq.put((heuristic, chain_copy))
-    return our_solve(pq)
+def our_solve(pq, seen_states):
+    while not pq.empty():
+        puzzle_tuple = pq.get()
+        priority = puzzle_tuple[0]
+        puzzle_chain = puzzle_tuple[1]
+        puzzle = puzzle_chain[-1]
+        if check_goal_state(puzzle):
+            return (True, puzzle_chain)
+        successors = get_all_successors(puzzle)
+        for successor in successors:
+            if successor not in seen_states:
+                seen_states.append(successor)
+                puzzle_heuristic = get_heuristic(puzzle)
+                depth = priority-puzzle_heuristic
+                heuristic = get_heuristic(successor) + depth + 1
+                chain_copy = deep_copy_puzzle_chain(puzzle_chain)
+                chain_copy.append(successor)
+                pq.put((heuristic, chain_copy))
+    return (False, [])
 
 
 def convert_chain_to_string(chain):
@@ -198,6 +201,5 @@ def convert_puzzle_to_string(puzzle):
     ret_string = ""
     ret_string = ret_string + str(puzzle[0]) + "\n" + str(puzzle[1]) + "\n" + str(puzzle[2]) + "\n"
     return ret_string
-solve(8,1,2,0,4,3,7,6,5)
 
 
